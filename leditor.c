@@ -1,5 +1,7 @@
 #include "raylib.h"
+#include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/types.h>
 #define RAYGUI_IMPLEMENTATION
 #define RPNG_IMPLEMENTATION
@@ -26,14 +28,14 @@ rlpf;
 typedef struct{
     char nm[256];
     int sz[2];
-    int specs[16384];
-    int specs2[16384];
+    uint32_t specs[16384];
+    uint32_t specs2[16384];
     int tp;
     int bfTiles;
     int rnd;
-    int ptpos;
+    int ptPos;
     int repeatL[16384];
-    uint32_t tags;
+    uint64_t tags;
     Texture2D voxelStruct;
 }
 tile;
@@ -114,6 +116,408 @@ unsigned int _mnt_c_users_manti_downloads_mantis_rain_world_font_ttf_len = 22124
 // if (tiletype==30)return "Move Mirror";
 // if (tiletype==31)return "NUL";
 // }
+bool ispreviousequal(char previous[256], char comparison[256]){
+int x, xx;
+for(x=0;!(comparison[x]==0);x++);
+for(xx=0;xx<x;xx++){
+    if(!(previous[255-xx]==comparison))return false;
+}
+return true;
+}
+bool strcompare(char str1[], char str2[]){
+for(int x=0;!(str1[x]==0);x++)if(!(str1[x]==str2[x]))return false;return true;
+}
+tile *load_tiles(char level_path[]){
+    
+    int depth=0;
+    bool exit_status=false;
+    int size=0; 
+    // char arraytest[259] ="[[[[1, []], [1, []], [1, []]],[[1, []], [1, []], [1, []]],[[1, []], [1, []], [1, []]]],[[[1, []], [1, []], [1, []]],[[1, []], [1, []], [1, []]],[[1, []], [1, []], [1, []]]],[[[1, []], [1, []], [1, []]],[[1, []], [1, []], [1, []]],[[1, []], [1, []], [1, []]]]]";
+    int x=-1;
+    int xx=0;
+    int yy=0;
+    int coord_temp[2]={0,0};
+    char current_char;
+    char previous[256]="wawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawawa";
+    current_char=' ';
+    int strin=0;
+    char init_path[256];
+    char voxelpath[256];
+    sprintf(init_path,"%s/Init.txt",level_path);
+    FILE *level_file = fopen(init_path,"r");
+    
+    current_char=' ';
+
+    int arraysize[3]={0,0,0};
+    while (!exit_status){
+    current_char=fgetc(level_file);
+    for(xx=0;xx<255;xx++)previous[xx]=previous[xx+1];
+    previous[255]=current_char;
+    if(previous[252]=='#'&&previous[253]=='n'&&previous[254]=='m'&&previous[255]==':')size+=1;
+    if (feof(level_file))exit_status=true;
+    }
+    fclose(level_file);
+    level_file = fopen(init_path,"r");
+    tile *tiles=malloc(sizeof(tile)*size);
+    exit_status=false;
+    while (!exit_status){
+        
+        current_char=fgetc(level_file);
+        for(xx=0;xx<255;xx++)previous[xx]=previous[xx+1];
+        previous[255]=current_char;
+        // printf("%c",current_char);
+        if(current_char=='['){
+            
+            while (!(current_char==']')){
+                // printf("/n%s\n",previous);
+                // printf("%c",current_char);
+                if(current_char==':'){
+                if(previous[252]=='#'&&previous[253]=='n'&&previous[254]=='m'&&previous[255]==':'){
+                    x+=1;
+                    strin=0;
+                    tiles[x]=(tile){.nm={0},.sz={0,0},.specs={0},.specs2={0},.tp=-1,.bfTiles=0,.rnd=0,.ptPos=0,.repeatL={0},.tags=0b00000000000000000000000000000000};
+                    for(yy=0;yy<2;yy++){
+                    current_char=fgetc(level_file);
+                    for(xx=0;xx<255;xx++)previous[xx]=previous[xx+1];
+                    previous[255]=current_char;
+                    }
+                    while (current_char!='"'){
+                        tiles[x].nm[strin]=current_char;
+                        strin+=1;
+                        current_char=fgetc(level_file);
+                        for(xx=0;xx<255;xx++)previous[xx]=previous[xx+1];
+                        previous[255]=current_char;
+                }
+
+            }
+            else if(previous[252]=='#'&&previous[253]=='s'&&previous[254]=='z'&&previous[255]==':'){
+                strin=0;
+                coord_temp[0]=0;
+                coord_temp[1]=0;
+                while (!(current_char==',')){
+                    switch (current_char){
+                    case('0'):coord_temp[0]+=pow(0,strin);strin+=1;break;
+                    case('1'):coord_temp[0]+=pow(1,strin);strin+=1;break;
+                    case('2'):coord_temp[0]+=pow(2,strin);strin+=1;break;
+                    case('3'):coord_temp[0]+=pow(3,strin);strin+=1;break;
+                    case('4'):coord_temp[0]+=pow(4,strin);strin+=1;break;
+                    case('5'):coord_temp[0]+=pow(5,strin);strin+=1;break;
+                    case('6'):coord_temp[0]+=pow(6,strin);strin+=1;break;
+                    case('7'):coord_temp[0]+=pow(7,strin);strin+=1;break;
+                    case('8'):coord_temp[0]+=pow(8,strin);strin+=1;break;
+                    case('9'):coord_temp[0]+=pow(9,strin);strin+=1;break;
+                }
+                    current_char = fgetc(level_file);
+                    for(xx=0;xx<255;xx++)previous[xx]=previous[xx+1];
+                    previous[255]=current_char;
+                }
+                for(xx=0;xx<1+floor(log(coord_temp[0]));xx++){
+                    coord_temp[1]=((coord_temp[1]*10)+coord_temp[0])%10;
+                    coord_temp[0]=coord_temp[0]/10;
+                }
+                tiles[x].sz[0]=coord_temp[1];
+            
+                for(yy=0;yy<2;yy++){
+                    current_char = fgetc(level_file);
+                    for(xx=0;xx<255;xx++)previous[xx]=previous[xx+1];
+                    previous[255]=current_char;
+                }
+            
+                strin=0;
+                coord_temp[0]=0;
+                coord_temp[1]=0;
+                while (!(current_char==')')){
+                    switch (current_char){
+                    case('0'):coord_temp[0]+=pow(0,strin);strin+=1;break;
+                    case('1'):coord_temp[0]+=pow(1,strin);strin+=1;break;
+                    case('2'):coord_temp[0]+=pow(2,strin);strin+=1;break;
+                    case('3'):coord_temp[0]+=pow(3,strin);strin+=1;break;
+                    case('4'):coord_temp[0]+=pow(4,strin);strin+=1;break;
+                    case('5'):coord_temp[0]+=pow(5,strin);strin+=1;break;
+                    case('6'):coord_temp[0]+=pow(6,strin);strin+=1;break;
+                    case('7'):coord_temp[0]+=pow(7,strin);strin+=1;break;
+                    case('8'):coord_temp[0]+=pow(8,strin);strin+=1;break;
+                    case('9'):coord_temp[0]+=pow(9,strin);strin+=1;break;
+                }
+                    current_char = fgetc(level_file);
+                    for(xx=0;xx<255;xx++)previous[xx]=previous[xx+1];
+                    previous[255]=current_char;
+                }
+                for(xx=0;xx<1+floor(log(coord_temp[0]));xx++){
+                    coord_temp[1]=((coord_temp[1]*10)+coord_temp[0])%10;
+                    coord_temp[0]=coord_temp[0]/10;
+                }
+                tiles[x].sz[1]=coord_temp[1];
+            }
+                else if(previous[249]=='#'&&previous[250]=='s'&&previous[251]=='p'&&previous[252]=='e'&&previous[253]=='c'&&previous[254]=='s'&&previous[255]==':'){
+                    strin=0;
+                    while (!(current_char==']')){
+                        if(current_char=='0')tiles[x].specs[strin]=0b10000000000000000000000000000000;
+                        else if(current_char=='1'&&(!previous[254]=='-'))tiles[x].specs[strin]=0b01000000000000000000000000000000;
+                        else if(current_char=='2')tiles[x].specs[strin]=0b00100000000000000000000000000000;
+                        else if(current_char=='3')tiles[x].specs[strin]=0b00010000000000000000000000000000;
+                        else if(current_char=='4')tiles[x].specs[strin]=0b00001000000000000000000000000000;
+                        else if(current_char=='5')tiles[x].specs[strin]=0b00000100000000000000000000000000;
+                        else if(current_char=='6')tiles[x].specs[strin]=0b00000010000000000000000000000000;
+                        else if(current_char=='7')tiles[x].specs[strin]=0b00000001000000000000000000000000;
+                        else if(current_char=='9')tiles[x].specs[strin]=0b00000000100000000000000000000000;
+                        else if(current_char=='1'&&previous[254]=='-')tiles[x].specs[strin]=0b00000000000000000000000000000001;
+                        if (current_char==',')strin+=1;
+                        current_char = fgetc(level_file);
+                        for(xx=0;xx<255;xx++)previous[xx]=previous[xx+1];
+                        previous[255]=current_char;
+                    }
+                        
+            }
+            else if(previous[248]=='#'&&previous[249]=='s'&&previous[250]=='p'&&previous[251]=='e'&&previous[252]=='c'&&previous[253]=='s'&&previous[254]=='2'&&previous[255]==':'){
+                current_char = fgetc(level_file);
+                for(xx=0;xx<255;xx++)previous[xx]=previous[xx+1];
+                previous[255]=current_char;
+                if(current_char=='['){
+                    strin=0;
+                    while (!(current_char==']')){
+                        if(current_char=='0')tiles[x].specs[strin]=0b10000000000000000000000000000000;
+                        else if(current_char=='1'&&(!previous[254]=='-'))tiles[x].specs[strin]=0b01000000000000000000000000000000;
+                        else if(current_char=='2')tiles[x].specs[strin]=0b00100000000000000000000000000000;
+                        else if(current_char=='3')tiles[x].specs[strin]=0b00010000000000000000000000000000;
+                        else if(current_char=='4')tiles[x].specs[strin]=0b00001000000000000000000000000000;
+                        else if(current_char=='5')tiles[x].specs[strin]=0b00000100000000000000000000000000;
+                        else if(current_char=='6')tiles[x].specs[strin]=0b00000010000000000000000000000000;
+                        else if(current_char=='7')tiles[x].specs[strin]=0b00000001000000000000000000000000;
+                        else if(current_char=='9')tiles[x].specs[strin]=0b00000000100000000000000000000000;
+                        else if(current_char=='1'&&previous[254]=='-')tiles[x].specs[strin]=0b00000000000000000000000000000001;
+                        if (current_char==',')strin+=1;
+                        current_char = fgetc(level_file);
+                        for(xx=0;xx<255;xx++)previous[xx]=previous[xx+1];
+                        previous[255]=current_char;
+                    }
+                }
+            }
+            else if(previous[252]=='#'&&previous[253]=='t'&&previous[254]=='p'&&previous[255]==':'){
+                for(yy=0;yy<2;yy++){
+                while (!(current_char=='"')){
+                    current_char = fgetc(level_file);
+                    for(xx=0;xx<255;xx++)previous[xx]=previous[xx+1];
+                    previous[255]=current_char;
+                }
+                current_char = fgetc(level_file);
+                for(xx=0;xx<255;xx++)previous[xx]=previous[xx+1];
+                previous[255]=current_char;
+            }
+            if(previous[243]=='"'&&previous[244]=='v'&&previous[245]=='o'&&previous[246]=='x'&&previous[247]=='e'&&previous[248]=='l'&&previous[249]=='S'&&previous[250]=='t'&&previous[251]=='r'&&previous[252]=='u'&&previous[253]=='c'&&previous[254]=='t'&&previous[255]=='"')tiles[x].tp=0;
+            else if(previous[235]=='"'&&previous[236]=='v'&&previous[237]=='o'&&previous[238]=='x'&&previous[239]=='e'&&previous[240]=='l'&&previous[241]=='S'&&previous[242]=='t'&&previous[243]=='r'&&previous[244]=='u'&&previous[245]=='c'&&previous[246]=='t'&&previous[247]=='R'&&previous[248]=='o'&&previous[249]=='c'&&previous[250]=='k'&&previous[251]=='T'&&previous[252]=='y'&&previous[253]=='p'&&previous[254]=='e'&&previous[255]=='"')tiles[x].tp=1;
+            else if(previous[219]=='"'&&previous[220]=='v'&&previous[221]=='o'&&previous[222]=='x'&&previous[223]=='e'&&previous[224]=='l'&&previous[225]=='S'&&previous[226]=='t'&&previous[227]=='r'&&previous[228]=='u'&&previous[229]=='c'&&previous[230]=='t'&&previous[231]=='R'&&previous[232]=='a'&&previous[233]=='n'&&previous[234]=='d'&&previous[235]=='o'&&previous[236]=='m'&&previous[237]=='D'&&previous[238]=='i'&&previous[239]=='s'&&previous[240]=='p'&&previous[241]=='l'&&previous[242]=='a'&&previous[243]=='c'&&previous[244]=='e'&&previous[245]=='H'&&previous[246]=='o'&&previous[247]=='r'&&previous[248]=='i'&&previous[249]=='z'&&previous[250]=='o'&&previous[251]=='n'&&previous[252]=='t'&&previous[253]=='a'&&previous[254]=='l'&&previous[255]=='"')tiles[x].tp=2;
+            else if(previous[221]=='"'&&previous[222]=='v'&&previous[223]=='o'&&previous[224]=='x'&&previous[225]=='e'&&previous[226]=='l'&&previous[227]=='S'&&previous[228]=='t'&&previous[229]=='r'&&previous[230]=='u'&&previous[231]=='c'&&previous[232]=='t'&&previous[233]=='R'&&previous[234]=='a'&&previous[235]=='n'&&previous[236]=='d'&&previous[237]=='o'&&previous[238]=='m'&&previous[239]=='D'&&previous[240]=='i'&&previous[241]=='s'&&previous[242]=='p'&&previous[243]=='l'&&previous[244]=='a'&&previous[245]=='c'&&previous[246]=='e'&&previous[247]=='V'&&previous[248]=='e'&&previous[249]=='r'&&previous[250]=='t'&&previous[251]=='i'&&previous[252]=='c'&&previous[253]=='a'&&previous[254]=='l'&&previous[255]=='"')tiles[x].tp=3;
+            else if(previous[235]=='"'&&previous[236]=='v'&&previous[237]=='o'&&previous[238]=='x'&&previous[239]=='e'&&previous[240]=='l'&&previous[241]=='S'&&previous[242]=='t'&&previous[243]=='r'&&previous[244]=='u'&&previous[245]=='c'&&previous[246]=='t'&&previous[247]=='S'&&previous[248]=='a'&&previous[249]=='n'&&previous[250]=='d'&&previous[251]=='T'&&previous[252]=='y'&&previous[253]=='p'&&previous[254]=='e'&&previous[255]=='"')tiles[x].tp=4;
+        }
+        else if(previous[247]=='#'&&previous[248]=='b'&&previous[249]=='f'&&previous[250]=='T'&&previous[251]=='i'&&previous[252]=='l'&&previous[253]=='e'&&previous[254]=='s'&&previous[255]==':'){
+            strin=0;
+            coord_temp[0]=0;
+            coord_temp[1]=0;
+            while (!(current_char==','||current_char==']'||current_char=='#')){
+                switch (current_char){
+                case('0'):coord_temp[0]+=pow(0,strin);strin+=1;break;
+                case('1'):coord_temp[0]+=pow(1,strin);strin+=1;break;
+                case('2'):coord_temp[0]+=pow(2,strin);strin+=1;break;
+                case('3'):coord_temp[0]+=pow(3,strin);strin+=1;break;
+                case('4'):coord_temp[0]+=pow(4,strin);strin+=1;break;
+                case('5'):coord_temp[0]+=pow(5,strin);strin+=1;break;
+                case('6'):coord_temp[0]+=pow(6,strin);strin+=1;break;
+                case('7'):coord_temp[0]+=pow(7,strin);strin+=1;break;
+                case('8'):coord_temp[0]+=pow(8,strin);strin+=1;break;
+                case('9'):coord_temp[0]+=pow(9,strin);strin+=1;break;
+            }
+                current_char = fgetc(level_file);
+                for(xx=0;xx<255;xx++)previous[xx]=previous[xx+1];
+                previous[255]=current_char;
+            }
+            for(xx=0;xx<1+floor(log(coord_temp[0]));xx++){
+                coord_temp[1]=((coord_temp[1]*10)+coord_temp[0])%10;
+                coord_temp[0]=coord_temp[0]/10;
+            }
+            tiles[x].bfTiles=coord_temp[1];
+        }
+        else if(previous[251]=='#'&&previous[252]=='r'&&previous[253]=='n'&&previous[254]=='d'&&previous[255]==':'){
+            strin=0;
+            
+            coord_temp[0]=0;
+            coord_temp[1]=0;
+            while (!(current_char==','||current_char==']'||current_char=='#')){
+                switch (current_char){
+                case('0'):coord_temp[0]+=pow(0,strin);strin+=1;break;
+                case('1'):coord_temp[0]+=pow(1,strin);strin+=1;break;
+                case('2'):coord_temp[0]+=pow(2,strin);strin+=1;break;
+                case('3'):coord_temp[0]+=pow(3,strin);strin+=1;break;
+                case('4'):coord_temp[0]+=pow(4,strin);strin+=1;break;
+                case('5'):coord_temp[0]+=pow(5,strin);strin+=1;break;
+                case('6'):coord_temp[0]+=pow(6,strin);strin+=1;break;
+                case('7'):coord_temp[0]+=pow(7,strin);strin+=1;break;
+                case('8'):coord_temp[0]+=pow(8,strin);strin+=1;break;
+                case('9'):coord_temp[0]+=pow(9,strin);strin+=1;break;
+            }
+                current_char = fgetc(level_file);
+                for(xx=0;xx<255;xx++)previous[xx]=previous[xx+1];
+                previous[255]=current_char;
+            }
+            for(xx=0;xx<1+floor(log(coord_temp[0]));xx++){
+                coord_temp[1]=((coord_temp[1]*10)+coord_temp[0])%10;
+                coord_temp[0]=coord_temp[0]/10;
+            }
+            tiles[x].rnd=coord_temp[1];
+        }
+        else if(previous[249]=='#'&&previous[250]=='p'&&previous[251]=='t'&&previous[252]=='P'&&previous[253]=='o'&&previous[254]=='s'&&previous[255]==':'){
+            strin=0;
+            coord_temp[0]=0;
+            coord_temp[1]=0;
+            while (!(current_char==','||current_char==']'||current_char=='#')){
+                switch (current_char){
+                case('0'):coord_temp[0]+=pow(0,strin);strin+=1;break;
+                case('1'):coord_temp[0]+=pow(1,strin);strin+=1;break;
+                case('2'):coord_temp[0]+=pow(2,strin);strin+=1;break;
+                case('3'):coord_temp[0]+=pow(3,strin);strin+=1;break;
+                case('4'):coord_temp[0]+=pow(4,strin);strin+=1;break;
+                case('5'):coord_temp[0]+=pow(5,strin);strin+=1;break;
+                case('6'):coord_temp[0]+=pow(6,strin);strin+=1;break;
+                case('7'):coord_temp[0]+=pow(7,strin);strin+=1;break;
+                case('8'):coord_temp[0]+=pow(8,strin);strin+=1;break;
+                case('9'):coord_temp[0]+=pow(9,strin);strin+=1;break;
+            }
+                current_char = fgetc(level_file);
+                for(xx=0;xx<255;xx++)previous[xx]=previous[xx+1];
+                previous[255]=current_char;
+            }
+            for(xx=0;xx<1+floor(log(coord_temp[0]));xx++){
+                coord_temp[1]=((coord_temp[1]*10)+coord_temp[0])%10;
+                coord_temp[0]=coord_temp[0]/10;
+            }
+            tiles[x].ptPos=coord_temp[1];
+        }
+        else if(previous[247]=='#'&&previous[248]=='r'&&previous[249]=='e'&&previous[250]=='p'&&previous[251]=='e'&&previous[252]=='a'&&previous[253]=='t'&&previous[254]=='L'&&previous[255]==':'){
+                yy=0;
+                while (!(current_char==']')){
+                strin=1;
+                
+                coord_temp[0]=0;
+                coord_temp[1]=0;
+                current_char = fgetc(level_file);
+                for(xx=0;xx<255;xx++)previous[xx]=previous[xx+1];
+                previous[255]=current_char;
+                while (!(current_char==','||current_char==']')){
+                    switch (current_char){
+                    case('0'):coord_temp[0]+=pow(0,strin);strin+=1;break;
+                    case('1'):coord_temp[0]+=pow(1,strin);strin+=1;break;
+                    case('2'):coord_temp[0]+=pow(2,strin);strin+=1;break;
+                    case('3'):coord_temp[0]+=pow(3,strin);strin+=1;break;
+                    case('4'):coord_temp[0]+=pow(4,strin);strin+=1;break;
+                    case('5'):coord_temp[0]+=pow(5,strin);strin+=1;break;
+                    case('6'):coord_temp[0]+=pow(6,strin);strin+=1;break;
+                    case('7'):coord_temp[0]+=pow(7,strin);strin+=1;break;
+                    case('8'):coord_temp[0]+=pow(8,strin);strin+=1;break;
+                    case('9'):coord_temp[0]+=pow(9,strin);strin+=1;break;
+                }
+                    current_char = fgetc(level_file);
+                    for(xx=0;xx<255;xx++)previous[xx]=previous[xx+1];
+                    previous[255]=current_char;
+                }
+                for(xx=0;xx<floor(log(coord_temp[0]))+1;xx++){
+                    coord_temp[1]=((coord_temp[1]*10)+coord_temp[0])%10;
+                    coord_temp[0]=coord_temp[0]/10;
+                }
+                tiles[x].repeatL[yy]=coord_temp[1];
+                yy++;
+                // printf("%c",current_char);
+            }                   
+                // while (!(current_char==']')){
+                //     strin=0;
+                //     coord_temp[0]=0;
+                //     coord_temp[1]=0;
+                //     while (!(current_char==','||current_char==']')){
+                //         switch (current_char){
+                //         case('0'):coord_temp[0]+=pow(0,strin);strin+=1;break;
+                //         case('1'):coord_temp[0]+=pow(1,strin);strin+=1;break;
+                //         case('2'):coord_temp[0]+=pow(2,strin);strin+=1;break;
+                //         case('3'):coord_temp[0]+=pow(3,strin);strin+=1;break;
+                //         case('4'):coord_temp[0]+=pow(4,strin);strin+=1;break;
+                //         case('5'):coord_temp[0]+=pow(5,strin);strin+=1;break;
+                //         case('6'):coord_temp[0]+=pow(6,strin);strin+=1;break;
+                //         case('7'):coord_temp[0]+=pow(7,strin);strin+=1;break;
+                //         case('8'):coord_temp[0]+=pow(8,strin);strin+=1;break;
+                //         case('9'):coord_temp[0]+=pow(9,strin);strin+=1;break;
+                //     }
+                //         current_char = fgetc(level_file);
+                //         for(xx=0;xx<255;xx++)previous[xx]=previous[xx+1];
+                //         previous[255]=current_char;
+                //     }
+                //     for(xx=0;xx<1+floor(log(coord_temp[0]));xx++){
+                //         coord_temp[1]=((coord_temp[1]*10)+coord_temp[0])%10;
+                //         coord_temp[0]=coord_temp[0]/10;
+                //     }
+                //     tiles[x].repeatL[yy]=coord_temp[1];    
+                //     yy++;
+            // }
+            
+        }
+    }
+    else if (previous[250]=='#'&&previous[251]=='t'&&previous[252]=='a'&&previous[253]=='g'&&previous[254]=='s'&&previous[255]==':'){
+        tiles[x].tp=0b0000000000000000000000000000000000000000000000000000000000000000;
+        while(!(current_char==']')){
+            if(ispreviousequal(previous, "notTrashProp"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000000000000000000000001;
+            else if(ispreviousequal(previous,"notProp"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000000000000000000000010;
+            else if(ispreviousequal(previous,"nonSolid"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000000000000000000000100;
+            else if(ispreviousequal(previous,"drawLast"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000000000000000000001000;
+            else if(ispreviousequal(previous,"Big Sign"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000000000000000000010000;
+            else if(ispreviousequal(previous,"Small Asian Sign"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000000000000000000100000;
+            else if(ispreviousequal(previous,"small asian sign on wall"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000000000000000001000000;
+            else if(ispreviousequal(previous,"Big Western Sign"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000000000000000010000000;
+            else if(ispreviousequal(previous,"Big Western Sign Tilted""Big Western Sign Tilted"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000000000000000100000000;
+            else if(ispreviousequal(previous,"Larger Sign"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000000000000001000000000;
+            else if(ispreviousequal(previous,"Big Wheel"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000000000000010000000000;
+            else if(ispreviousequal(previous,"Chain Holder"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000000000000100000000000;
+            else if(ispreviousequal(previous,"fanBlade"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000000000001000000000000;
+            else if(ispreviousequal(previous,"harvester"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000000000010000000000000;
+            else if(ispreviousequal(previous,"Temple Floor"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000000000100000000000000;
+            else if(ispreviousequal(previous,"randomCords"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000000001000000000000000;
+            else if(ispreviousequal(previous,"effectColorA"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000000010000000000000000;
+            else if(ispreviousequal(previous,"effectColorB"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000000100000000000000000;
+            else if(ispreviousequal(previous,"Big Sign B"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000001000000000000000000;
+            else if(ispreviousequal(previous,"Big Western Sign B"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000010000000000000000000;
+            else if(ispreviousequal(previous,"Big Western Sign Tilted B"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000000100000000000000000000;
+            else if(ispreviousequal(previous,"Small Asian Sign B"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000001000000000000000000000;
+            else if(ispreviousequal(previous,"small asian sign on wall B"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000010000000000000000000000;
+            else if(ispreviousequal(previous,"Small Asian Sign Station"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000000100000000000000000000000;
+            else if(ispreviousequal(previous,"Small Asian Sign On Wall Station"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000001000000000000000000000000;
+            else if(ispreviousequal(previous,"Small Asian Sign Station B"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000010000000000000000000000000;
+            else if(ispreviousequal(previous,"Small Asian Sign On Wall Station B"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000000100000000000000000000000000;
+            else if(ispreviousequal(previous,"Larger Sign B"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000001000000000000000000000000000;
+            else if(ispreviousequal(previous,"Station Larger Sign"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000010000000000000000000000000000;
+            else if(ispreviousequal(previous,"Station Larger Sign B"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000000100000000000000000000000000000;
+            else if(ispreviousequal(previous,"Station Lamp"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000001000000000000000000000000000000;
+            else if(ispreviousequal(previous,"LumiaireH"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000010000000000000000000000000000000;
+            else if(ispreviousequal(previous,"notMegaTrashProp"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000000100000000000000000000000000000000;
+            else if(ispreviousequal(previous,"notTile"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000001000000000000000000000000000000000;
+            else if(ispreviousequal(previous,"ramp"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000010000000000000000000000000000000000;
+            else if(ispreviousequal(previous,"glass"))tiles[x].tp=tiles[x].tp|0b0000000000000000000000000000100000000000000000000000000000000000;
+            current_char=fgetc(level_file);
+            for(xx=0;xx<255;xx++)previous[xx]=previous[xx+1];
+            previous[255]=current_char;
+        }
+    }
+    else if(current_char==']'){
+        sprintf(voxelpath,"%s/%s.png",level_path,tiles[x].nm);
+        tiles[x].voxelStruct = LoadTextureFromImage(LoadImage(voxelpath));
+    }
+
+        current_char=fgetc(level_file);
+            for(xx=0;xx<255;xx++)previous[xx]=previous[xx+1];
+            previous[255]=current_char;
+        
+        
+        }
+        
+}if (feof(level_file))exit_status=true;
+}
+return tiles;
+}
 rlpf create_array(char level_path[]){
     if(!(level_path[0]=='C'||level_path[0]=='c'||level_path[0]=='/')){
         return default_rlpf;}
@@ -266,19 +670,20 @@ exit_status=false;
         for(xx=0;xx<9;xx++)previous[xx]=previous[xx+1];
         previous[9]=current_char;
         // printf("\n%s\n",previous);
-        if(depth==5&&(!(current_char=='['||current_char==']'))){
+        // if(depth==5&&(!(current_char=='['||current_char==']'))){
+        // if(true){
             // printf("\n%s\n",previous);
-            // printf("%cw",current_char);
+            // printf("%i\n",levelsize_current);
         if(previous[1]=='"'&&previous[2]=='d'&&previous[3]=='e'&&previous[4]=='f'&&previous[5]=='a'&&previous[6]=='u'&&previous[7]=='l'&&previous[8]=='t'&&previous[9]=='"'){
             // printf("here");
-            material_list[levelsize_current]=(material){0,0,0,0,""};
+            material_list[levelsize_current]=(material){0,0,0,0,{0}};
             levelsize_current+=1;
         }
 
         
         else if(previous[0]=='"'&&previous[1]=='m'&&previous[2]=='a'&&previous[3]=='t'&&previous[4]=='e'&&previous[5]=='r'&&previous[6]=='i'&&previous[7]=='a'&&previous[8]=='l'&&previous[9]=='"'){
             strin=0;
-            material_list[levelsize_current]=(material){1,0,0,0,""};
+            material_list[levelsize_current]=(material){1,0,0,0,{0}};
         for(yy=0;yy<11;yy++){
             current_char = fgetc(level_file);
             x+=1;
@@ -296,8 +701,8 @@ exit_status=false;
         levelsize_current+=1;
     }
         else if(previous[0]=='"'&&previous[1]=='t'&&previous[2]=='i'&&previous[3]=='l'&&previous[4]=='e'&&previous[5]=='H'&&previous[6]=='e'&&previous[7]=='a'&&previous[8]=='d'&&previous[9]=='"'){
-            material_list[levelsize_current]=(material){2,0,0,0,""};
-
+            material_list[levelsize_current]=(material){2,0,0,0,{0}};
+        // printf("here\n\n");
             for(yy=0;yy<17;yy++){
             current_char = fgetc(level_file);
             x+=1;
@@ -325,7 +730,7 @@ exit_status=false;
         for(xx=0;xx<9;xx++)previous[xx]=previous[xx+1];
         previous[9]=current_char;
     }
-    for(xx=0;xx<ceil(log(coord_temp[0]));xx++){
+    for(xx=0;xx<1+floor(log(coord_temp[0]));xx++){
         coord_temp[1]=((coord_temp[1]*10)+coord_temp[0])%10;
         coord_temp[0]=coord_temp[0]/10;
     }
@@ -341,7 +746,7 @@ exit_status=false;
     strin=0;
     coord_temp[0]=0;
     coord_temp[1]=0;
-    while (!(current_char=='"')){
+    while (!(current_char==')')){
         switch (current_char){
         case('0'):coord_temp[0]+=pow(0,strin);strin+=1;break;
         case('1'):coord_temp[0]+=pow(1,strin);strin+=1;break;
@@ -359,7 +764,7 @@ exit_status=false;
         for(xx=0;xx<9;xx++)previous[xx]=previous[xx+1];
         previous[9]=current_char;
     }
-    for(xx=0;xx<ceil(log(coord_temp[0]));xx++){
+    for(xx=0;xx<1+floor(log(coord_temp[0]));xx++){
         coord_temp[1]=((coord_temp[1]*10)+coord_temp[0])%10;
         coord_temp[0]=coord_temp[0]/10;
     }
@@ -382,9 +787,9 @@ exit_status=false;
     }
     levelsize_current+=1;
 }
-        else if(previous[0]=='"'&&previous[1]=='t'&&previous[2]=='i'&&previous[3]=='l'&&previous[4]=='e'&&previous[5]=='b'&&previous[6]=='o'&&previous[7]=='d'&&previous[8]=='y'&&previous[9]=='"'){
-            material_list[levelsize_current]=(material){3,0,0,0,""};
-        for(yy=0;yy<17;yy++){
+        else if(previous[0]=='"'&&previous[1]=='t'&&previous[2]=='i'&&previous[3]=='l'&&previous[4]=='e'&&previous[5]=='B'&&previous[6]=='o'&&previous[7]=='d'&&previous[8]=='y'&&previous[9]=='"'){
+            material_list[levelsize_current]=(material){3,0,0,0,{0}};
+            for(yy=0;yy<17;yy++){
             current_char = fgetc(level_file);
             x+=1;
             for(xx=0;xx<9;xx++)previous[xx]=previous[xx+1];
@@ -412,7 +817,7 @@ exit_status=false;
         for(xx=0;xx<9;xx++)previous[xx]=previous[xx+1];
         previous[9]=current_char;
     }
-    for(xx=0;xx<ceil(log(coord_temp[0]));xx++){
+    for(xx=0;xx<1+floor(log(coord_temp[0]));xx++){
         coord_temp[1]=((coord_temp[1]*10)+coord_temp[0])%10;
         coord_temp[0]=coord_temp[0]/10;
     }
@@ -446,7 +851,7 @@ exit_status=false;
         for(xx=0;xx<9;xx++)previous[xx]=previous[xx+1];
         previous[9]=current_char;
     }
-    for(xx=0;xx<ceil(log(coord_temp[0]));xx++){
+    for(xx=0;xx<1+floor(log(coord_temp[0]));xx++){
         coord_temp[1]=((coord_temp[1]*10)+coord_temp[0])%10;
         coord_temp[0]=coord_temp[0]/10;
     }
@@ -456,7 +861,7 @@ exit_status=false;
     strin=0;
     coord_temp[0]=0;
     coord_temp[1]=0;
-    while (!(current_char==',')){
+    while (!(current_char==']')){
         switch (current_char){
         case('0'):coord_temp[0]+=pow(0,strin);strin+=1;break;
         case('1'):coord_temp[0]+=pow(1,strin);strin+=1;break;
@@ -474,7 +879,7 @@ exit_status=false;
         for(xx=0;xx<9;xx++)previous[xx]=previous[xx+1];
         previous[9]=current_char;
     }
-    for(xx=0;xx<ceil(log(coord_temp[0]));xx++){
+    for(xx=0;xx<1+floor(log(coord_temp[0]));xx++){
         coord_temp[1]=((coord_temp[1]*10)+coord_temp[0])%10;
         coord_temp[0]=coord_temp[0]/10;
     }
@@ -482,19 +887,19 @@ exit_status=false;
 
     levelsize_current+=1;
 }
-    }
+    // }
         else {
             x = 0;
             // levelsize_current+=1;
             // material_list[level_index]=assign;
         }
-        if(depth==0)exit_status=true;
+        if(previous[9]==']'&&previous[8]==']'&&previous[7]==']'&&previous[6]==']')exit_status=true;
     }
     fclose(level_file);
     
     return (rlpf){.level_size={arraysize[0],arraysize[1],arraysize[2]}, .geometry=array, .material=material_list};
 }
-material* *create_material_array(){
+material create_material_array(){
 }
 int *get_geo_len(char level_path[]){
     int depth=0;
@@ -720,20 +1125,55 @@ void render_tile(rlpf level, uint8_t *render, char path[], int imgx, int imgy, i
     }
 
 }
-void render_level(rlpf level, int config[]){
-    int x, y, z, width, height, channels, bits;
+RenderTexture2D render_level(rlpf level, tile *tiles, int config[]){
+    int x, xx, y, z, width, height, channels, bits;
     int depth = 0;
     int char_in = 0;
     char current_char;
     bool exit_status = false;
     int level_index=-1;
-    char path[255]="C:\\Users\\manti\\Downloads\\mantis";
-
-    uint8_t *render = malloc(level.level_size[0]*level.level_size[1]*16*4*sizeof(uint8_t));
-    for(x=0;x<level.level_size[0]*level.level_size[1]*16*4;x++)render[x]=0xff;
-    for(x=0;x<level.level_size[0]*level.level_size[1];x++)
-    render_tile(level, render, path, width, height, config, x);
+    char path[255]="";
+    Texture2D temp_txr;
+    Image temp_img;
+    RenderTexture2D level_layers[30];
+    for(x=0;x<30;x++)level_layers[x]=LoadRenderTexture(1400,800);
+    // uint8_t *render = malloc(level.level_size[0]*level.level_size[1]*16*4*sizeof(uint8_t));
+    // for(x=0;x<level.level_size[0]*level.level_size[1]*16*4;x++)render[x]=0xff;
+    // for(x=0;x<level.level_size[0]*level.level_size[1];x++)
+    // render_tile(level, render, path, width, height, config, x);
     // pthread_create(render_tile())
+
+
+
+    for(z=0;z<level.level_size[2];z++){
+    // BeginTextureMode(level_layers[z]);
+    ClearBackground((Color){0xff,0xff,0xff,0xff});
+    for(x=0;x<level.level_size[0];x++){
+        for(y=0;y<level.level_size[1];y++){
+            if(((level.geometry[(x*level.level_size[1]*level.level_size[2])+(y*level.level_size[2])+(int)(floor(z/10))]&0b01000000000000000000000000000000))){
+            if(level.material[(x*level.level_size[1]*level.level_size[2])+(y*level.level_size[2])+(int)(floor(z/10))].tp==0){
+            GuiDrawRectangle((Rectangle){x*20,y*20,20,20}, 0, GetColor(0x000000ff), GetColor(0x000000ff));
+        // printf("%i",level.material[(x*config[0]*3)+y+(z%10)].tp);
+        }
+        else if(level.material[(x*level.level_size[1]*level.level_size[2])+(y*level.level_size[2])+(int)(floor(z/10))].tp==2){
+            for(xx=0;(strcmp(level.material[(x*level.level_size[1]*level.level_size[2])+(y*level.level_size[2])+(int)(floor(z/10))].objname, tiles[xx].nm));xx++);
+        if(tiles[xx].tp==0){
+            temp_txr = tiles[xx].voxelStruct;
+            temp_img = LoadImageFromTexture(temp_txr);
+            ImageCrop(&temp_img, (Rectangle){0,1,temp_img.width,temp_img.height-1});
+            ImageCrop(&temp_img, (Rectangle){0,0,(tiles[xx].sz[0]+tiles[xx].bfTiles)*20,(tiles[xx].sz[1]+tiles[xx].bfTiles)*20});
+            temp_txr = LoadTextureFromImage(temp_img);
+            DrawTextureRec(temp_txr, (Rectangle){0,0,temp_txr.width,temp_txr.height}, (Vector2){level.material[(x*level.level_size[1]*level.level_size[2])+(y*level.level_size[2])+(int)(floor(z/10))].point[0]*20,level.material[(x*level.level_size[1]*level.level_size[2])+(y*level.level_size[2])+(int)(floor(z/10))].point[1]*20},WHITE);
+
+            
+        }
+        }
+    }
+    }
+    }
+    // EndTextureMode();
+}
+// for(x=0;x<100;x++)printf("%s, %i\n",tiles[x].nm,tiles[x].repeatL[3]);config[0]config[0]
 }
 int new_button(char shape[], int x,int y,int xl,int yl,char text[]){
     if(shape=="Rectangle"){
@@ -747,7 +1187,7 @@ DrawLine(x1,y2,x2,y2, color);
 DrawLine(x2,y1,x2,y2, color);
 }
 void tiletype_draw_text(int tiletype, int layer){
-    char work_layer[13]="";
+    char work_layer[15]="";
     if (tiletype==0)GuiDrawText("Inverse",(Rectangle){20,250,250,75},TEXT_ALIGN_LEFT,GetColor(0xff0000ff));
     if (tiletype==1)GuiDrawText("Paint Walls",(Rectangle){20,250,250,75},TEXT_ALIGN_LEFT,GetColor(0xff0000ff));
     if (tiletype==2)GuiDrawText("Paint Air",(Rectangle){20,250,250,75},TEXT_ALIGN_LEFT,GetColor(0xff0000ff));
@@ -785,6 +1225,83 @@ void tiletype_draw_text(int tiletype, int layer){
     if (tiletype==31)GuiDrawText("Move Mirror",(Rectangle){20,250,250,75},TEXT_ALIGN_LEFT,GetColor(0xff0000ff));
     if (tiletype==32)GuiDrawText("NUL",(Rectangle){20,250,250,75},TEXT_ALIGN_LEFT,GetColor(0xff0000ff));
 }
+void wavefront_converter(char levelname[], int screen[], int effectcolor1, int effectcolor2, int paletteID1, int nofogdepth, char path[],int depth, int paletteID2, float fade, bool shade, bool ifnoshade_lit, bool fog){
+int x,y,z;
+char *temp_path = malloc(256*sizeof(char));
+Image GradientA, GradientB, layer, layer_sh, palette1, palette2, effectcolors;
+sprintf(temp_path,"%s/%s/%i/gradientA_%i.png",path,levelname,screen,depth);
+GradientA = LoadImage(temp_path);
+sprintf(temp_path,"%s/%s/%i/gradientB_%i.png",path,levelname,screen,depth);
+GradientB = LoadImage(temp_path);
+sprintf(temp_path,"%s/%s/%i/layer_%i.png",path,levelname,screen,depth);
+layer = LoadImage(temp_path);
+sprintf(temp_path,"%s/%s/%i/layer_sh_%i.png",path,levelname,screen,depth);
+layer_sh = LoadImage(temp_path);
+sprintf(temp_path,"C:/Program Files (x86)/Steam/steamapps/common/Rain World/RainWorld_Data/StreamingAssets/palettes/palette%i.png",paletteID1);
+palette1 = LoadImage(temp_path);
+sprintf(temp_path,"C:/Program Files (x86)/Steam/steamapps/common/Rain World/RainWorld_Data/StreamingAssets/palettes/palette%i.png",paletteID2);
+palette2 = LoadImage(temp_path);
+sprintf(temp_path,"C:/Program Files (x86)/Steam/steamapps/common/Rain World/RainWorld_Data/StreamingAssets/palettes/effectcolors.png");
+effectcolors = LoadImage(temp_path);
+if(!fog)depth=nofogdepth;
+// Color GradientA, GradientB, layer, layer_sh, palette1, palette2, effectcolors;
+for(x=0;x<layer.width;x++){
+    for(y=0;y<layer.height;y++){
+        // layer.data[]
+        printf("");
+    }
+}
+}
+void save_level(char level_path[], rlpf level){
+int x,y,z,xx,yy,zz;
+    FILE *level_file = fopen(level_path,"w");
+printf("[");
+for(x=0;x<level.level_size[1];x++){
+    printf("[");
+    for(y=0;y<level.level_size[0];y++){
+        printf("[");
+        for(z=0;z<level.level_size[2];z++){
+            printf("[");
+            xx=0;
+            if      ((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b10000000000000000000000000000000))printf("0");
+            else if ((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b01000000000000000000000000000000))printf("1");
+            else if ((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00100000000000000000000000000000))printf("2");
+            else if ((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00010000000000000000000000000000))printf("3");
+            else if ((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00001000000000000000000000000000))printf("4");
+            else if ((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000100000000000000000000000000))printf("5");
+            else if ((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000010000000000000000000000000))printf("6");
+            else if ((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000001000000000000000000000000))printf("7");
+            else if ((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000000100000000000000000000000))printf("9");
+            printf(", [");
+            if((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000000010000000000000000000000)){xx++;if(xx<1)printf(", ");printf("1");}
+            if((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000000001000000000000000000000)){xx++;if(xx<1)printf(", ");printf("2");}
+            if((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000000000100000000000000000000)){xx++;if(xx<1)printf(", ");printf("3");}
+            if((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000000000010000000000000000000)){xx++;if(xx<1)printf(", ");printf("4");}
+            if((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000000000001000000000000000000)){xx++;if(xx<1)printf(", ");printf("5");}
+            if((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000000000000100000000000000000)){xx++;if(xx<1)printf(", ");printf("6");}
+            if((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000000000000010000000000000000)){xx++;if(xx<1)printf(", ");printf("7");}
+            if((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000000000000001000000000000000)){xx++;if(xx<1)printf(", ");printf("9");}
+            if((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000000000000000100000000000000)){xx++;if(xx<1)printf(", ");printf("10");}
+            if((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000000000000000010000000000000)){xx++;if(xx<1)printf(", ");printf("11");}
+            if((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000000000000000001000000000000)){xx++;if(xx<1)printf(", ");printf("12");}
+            if((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000000000000000000100000000000)){xx++;if(xx<1)printf(", ");printf("13");}
+            if((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000000000000000000010000000000)){xx++;if(xx<1)printf(", ");printf("18");}
+            if((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000000000000000000001000000000)){xx++;if(xx<1)printf(", ");printf("19");}
+            if((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000000000000000000000100000000)){xx++;if(xx<1)printf(", ");printf("20");}
+            if((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000000000000000000000010000000)){xx++;if(xx<1)printf(", ");printf("21");}
+            printf("]");
+            printf("]zzz");
+            if(!(z+1==level.level_size[2]))printf(", "); 
+        }
+        printf("]y");
+        if(!(y+1==level.level_size[0]))printf(", ");
+}
+printf("]x");
+if(!(x+1==level.level_size[1]))printf(", ");
+}
+printf("]e");
+printf("\t");
+}
 int main(int argc, char **argv){
 
 
@@ -806,22 +1323,25 @@ int main(int argc, char **argv){
     int state_rect[4]={0,0,0,0};
     int negative_extra[2]={0,0};
     int previous=0;
-    char level_path[256]="C:/users/manti/Downloads/Official Level Editor Downpour/LevelEditorProjects/World/Multi/LargeHall.txt";
+    char level_path[256]="/home/riv/Downloads/Official Level Editor Downpour/LevelEditorProjects/World/Multi/LargeHall.txt";
+    char level_path_2[256]="/home/riv/Downloads/Official Level Editor Downpour/LevelEditorProjects/World/Multi/LargeHall_levelpathsavetest.txt";
     int theme=0;
+    int temp=0;
     RenderTexture2D geometry_texture = LoadRenderTexture(16*config[1], 16*config[0]);
     // for(x=0;x<1000000;x++){
     //     printf("%c",fgetc(level_file));
     // }
     
     rlpf level=create_array(level_path);
+    tile *tiles=load_tiles("/home/riv/Downloads/Official Level Editor Downpour/Graphics");
     // level=create_array(level_path);
     printf("\n\n%d\n\n", level.level_size[1]);
     // for(x=0;x<level.level_size[0]*level.level_size[1];x++){
     //     printf("0x%x, ",level.geometry[x]);
     // }
-    // render_level(level, config);
+    
 
-    // for(x=0;x<1000;x++)printf("[#tp: %i, #data: (point(%i, %i), %i) '%s'], ",level.material[x].tp,level.material[x].point[0],level.material[x].point[1],level.material[x].point[2],level.material[x].objname);
+    for(x=0;x<1000;x++)printf("[#tp: %i, #data: (point(%i, %i), %i) '%s'], ",level.material[x].tp,level.material[x].point[0],level.material[x].point[1],level.material[x].point[2],level.material[x].objname);
     setstyle_originalleditor(argv);
     render_editor_geometry(level, config, geometry_texture);
     while (!WindowShouldClose())
@@ -837,7 +1357,9 @@ int main(int argc, char **argv){
                 
                 if (new_button("Rectangle", 24, 24, 120, 30, ("Geometry Editor"))) scene = 1;
                 if (new_button("Rectangle", 24, 200, 120, 30, ("Select Level"))) scene = 2;
-    
+                if (new_button("Rectangle", 24, 340, 120, 30, ("Tile Editor"))) scene = 3;
+                if (new_button("Rectangle", 240, 340, 120, 30, ("Render"))) scene = 10;
+                if (new_button("Rectangle", 440, 340, 120, 30, ("Save"))) scene = 3;
                 // if (showMessageBox)
                 // {
                 //     int result = GuiMessageBox((Rectangle){ 85, 70, 250, 100 },
@@ -973,8 +1495,8 @@ int main(int argc, char **argv){
                                     if (0>((floor(GetMouseX()/15)+1)-(state_rect[1]+12)))negative_extra[0]=2;
                                     if (0>((floor(GetMouseY()/15)+1)-(state_rect[2]+2)))negative_extra[1]=2;
                                     
-                                    for(x=0;x<abs((floor(GetMouseX()/15)+1)-(state_rect[1]+12))+negative_extra[0];x++){
-                                        for(y=0;y<abs((floor(GetMouseY()/15)+1)-(state_rect[2]+2))+negative_extra[1];y++){
+                                    for(x=0;x<fabs((floor(GetMouseX()/15)+1)-(state_rect[1]+12))+negative_extra[0];x++){
+                                        for(y=0;y<fabs((floor(GetMouseY()/15)+1)-(state_rect[2]+2))+negative_extra[1];y++){
                                             
                                             if     ((0<=((floor(GetMouseX()/15)+1)-(state_rect[1]+12)))&&(0<=((floor(GetMouseY()/15)+1)-(state_rect[2]+2))))level.geometry[(state_rect[1]*(level.level_size[1]*level.level_size[2]))+(x*(level.level_size[1]*level.level_size[2]))+((state_rect[2]*level.level_size[2])+(y*level.level_size[2]))+layer]=((level.geometry[(state_rect[1]*(level.level_size[1]*level.level_size[2]))+(x*(level.level_size[1]*level.level_size[2]))+((state_rect[2]*level.level_size[2])+(y*level.level_size[2]))+layer]|0b11111111100000000000000000000000)^0b11111111100000000000000000000000)|0b01000000000000000000000000000000;
                                             else if((0>((floor(GetMouseX()/15)+1)-(state_rect[1]+12)))&&(0<=((floor(GetMouseY()/15)+1)-(state_rect[2]+2))))level.geometry[(state_rect[1]*(level.level_size[1]*level.level_size[2]))+((0-x)*(level.level_size[1]*level.level_size[2]))+((state_rect[2]*level.level_size[2])+(y*level.level_size[2]))+layer]=((level.geometry[(state_rect[1]*(level.level_size[1]*level.level_size[2]))+((0-x)*(level.level_size[1]*level.level_size[2]))+((state_rect[2]*level.level_size[2])+(y*level.level_size[2]))+layer]|0b11111111100000000000000000000000)^0b11111111100000000000000000000000)|0b01000000000000000000000000000000;
@@ -1000,8 +1522,8 @@ int main(int argc, char **argv){
                                     if (0>((floor(GetMouseX()/15)+1)-(state_rect[1]+12)))negative_extra[0]=2;
                                     if (0>((floor(GetMouseY()/15)+1)-(state_rect[2]+2)))negative_extra[1]=2;
                                     
-                                    for(x=0;x<abs((floor(GetMouseX()/15)+1)-(state_rect[1]+12))+negative_extra[0];x++){
-                                        for(y=0;y<abs((floor(GetMouseY()/15)+1)-(state_rect[2]+2))+negative_extra[1];y++){
+                                    for(x=0;x<fabs((floor(GetMouseX()/15)+1)-(state_rect[1]+12))+negative_extra[0];x++){
+                                        for(y=0;y<fabs((floor(GetMouseY()/15)+1)-(state_rect[2]+2))+negative_extra[1];y++){
                                             
                                             if     ((0<=((floor(GetMouseX()/15)+1)-(state_rect[1]+12)))&&(0<=((floor(GetMouseY()/15)+1)-(state_rect[2]+2))))level.geometry[(state_rect[1]*(level.level_size[1]*level.level_size[2]))+(x*(level.level_size[1]*level.level_size[2]))+((state_rect[2]*level.level_size[2])+(y*level.level_size[2]))+layer]=((level.geometry[(state_rect[1]*(level.level_size[1]*level.level_size[2]))+(x*(level.level_size[1]*level.level_size[2]))+((state_rect[2]*level.level_size[2])+(y*level.level_size[2]))+layer]|0b11111111100000000000000000000000)^0b11111111100000000000000000000000)|0b10000000000000000000000000000000;
                                             else if((0>((floor(GetMouseX()/15)+1)-(state_rect[1]+12)))&&(0<=((floor(GetMouseY()/15)+1)-(state_rect[2]+2))))level.geometry[(state_rect[1]*(level.level_size[1]*level.level_size[2]))+((0-x)*(level.level_size[1]*level.level_size[2]))+((state_rect[2]*level.level_size[2])+(y*level.level_size[2]))+layer]=((level.geometry[(state_rect[1]*(level.level_size[1]*level.level_size[2]))+((0-x)*(level.level_size[1]*level.level_size[2]))+((state_rect[2]*level.level_size[2])+(y*level.level_size[2]))+layer]|0b11111111100000000000000000000000)^0b11111111100000000000000000000000)|0b10000000000000000000000000000000;
@@ -1060,8 +1582,8 @@ int main(int argc, char **argv){
                                     if (0>((floor(GetMouseX()/15)+1)-(state_rect[1]+12)))negative_extra[0]=2;
                                     if (0>((floor(GetMouseY()/15)+1)-(state_rect[2]+2)))negative_extra[1]=2;
                                     if (layer!=2){
-                                    for(x=0;x<abs((floor(GetMouseX()/15)+1)-(state_rect[1]+12))+negative_extra[0];x++){
-                                        for(y=0;y<abs((floor(GetMouseY()/15)+1)-(state_rect[2]+2))+negative_extra[1];y++){
+                                    for(x=0;x<fabs((floor(GetMouseX()/15)+1)-(state_rect[1]+12))+negative_extra[0];x++){
+                                        for(y=0;y<fabs((floor(GetMouseY()/15)+1)-(state_rect[2]+2))+negative_extra[1];y++){
                                             
                                             if     ((0<=((floor(GetMouseX()/15)+1)-(state_rect[1]+12)))&&(0<=((floor(GetMouseY()/15)+1)-(state_rect[2]+2))))level.geometry[(state_rect[1]*(level.level_size[1]*level.level_size[2]))+(x*(level.level_size[1]*level.level_size[2]))+((state_rect[2]*level.level_size[2])+(y*level.level_size[2]))+1+layer]=level.geometry[(state_rect[1]*(level.level_size[1]*level.level_size[2]))+(x*(level.level_size[1]*level.level_size[2]))+((state_rect[2]*level.level_size[2])+(y*level.level_size[2]))+layer];
                                             else if((0>((floor(GetMouseX()/15)+1)-(state_rect[1]+12)))&&(0<=((floor(GetMouseY()/15)+1)-(state_rect[2]+2))))level.geometry[(state_rect[1]*(level.level_size[1]*level.level_size[2]))+((0-x)*(level.level_size[1]*level.level_size[2]))+((state_rect[2]*level.level_size[2])+(y*level.level_size[2]))+1+layer]=level.geometry[(state_rect[1]*(level.level_size[1]*level.level_size[2]))+((0-x)*(level.level_size[1]*level.level_size[2]))+((state_rect[2]*level.level_size[2])+(y*level.level_size[2]))+layer];
@@ -1071,8 +1593,8 @@ int main(int argc, char **argv){
                                     }
                                 }
                                     else{
-                                        for(x=0;x<abs((floor(GetMouseX()/15)+1)-(state_rect[1]+12))+negative_extra[0];x++){
-                                            for(y=0;y<abs((floor(GetMouseY()/15)+1)-(state_rect[2]+2))+negative_extra[1];y++){
+                                        for(x=0;x<fabs((floor(GetMouseX()/15)+1)-(state_rect[1]+12))+negative_extra[0];x++){
+                                            for(y=0;y<fabs((floor(GetMouseY()/15)+1)-(state_rect[2]+2))+negative_extra[1];y++){
                                                 
                                                 if     ((0<=((floor(GetMouseX()/15)+1)-(state_rect[1]+12)))&&(0<=((floor(GetMouseY()/15)+1)-(state_rect[2]+2))))level.geometry[(state_rect[1]*(level.level_size[1]*level.level_size[2]))+(x*(level.level_size[1]*level.level_size[2]))+((state_rect[2]*level.level_size[2])+(y*level.level_size[2]))-2]=level.geometry[(state_rect[1]*(level.level_size[1]*level.level_size[2]))+(x*(level.level_size[1]*level.level_size[2]))+((state_rect[2]*level.level_size[2])+(y*level.level_size[2]))+layer];
                                                 else if((0>((floor(GetMouseX()/15)+1)-(state_rect[1]+12)))&&(0<=((floor(GetMouseY()/15)+1)-(state_rect[2]+2))))level.geometry[(state_rect[1]*(level.level_size[1]*level.level_size[2]))+((0-x)*(level.level_size[1]*level.level_size[2]))+((state_rect[2]*level.level_size[2])+(y*level.level_size[2]))-2]=level.geometry[(state_rect[1]*(level.level_size[1]*level.level_size[2]))+((0-x)*(level.level_size[1]*level.level_size[2]))+((state_rect[2]*level.level_size[2])+(y*level.level_size[2]))+layer];
@@ -1113,8 +1635,8 @@ int main(int argc, char **argv){
                                 if (0>((floor(GetMouseX()/15)+1)-(state_rect[1]+12)))negative_extra[0]=2;
                                 if (0>((floor(GetMouseY()/15)+1)-(state_rect[2]+2)))negative_extra[1]=2;
                                 
-                                for(x=0;x<abs((floor(GetMouseX()/15)+1)-(state_rect[1]+12))+negative_extra[0];x++){
-                                    for(y=0;y<abs((floor(GetMouseY()/15)+1)-(state_rect[2]+2))+negative_extra[1];y++){
+                                for(x=0;x<fabs((floor(GetMouseX()/15)+1)-(state_rect[1]+12))+negative_extra[0];x++){
+                                    for(y=0;y<fabs((floor(GetMouseY()/15)+1)-(state_rect[2]+2))+negative_extra[1];y++){
                                         for(z=0;z<level.level_size[2];z++){
                                         
                                         if     ((0<=((floor(GetMouseX()/15)+1)-(state_rect[1]+12)))&&(0<=((floor(GetMouseY()/15)+1)-(state_rect[2]+2))))level.geometry[(state_rect[1]*(level.level_size[1]*level.level_size[2]))+(x*(level.level_size[1]*level.level_size[2]))+((state_rect[2]*level.level_size[2])+(y*level.level_size[2]))+z]=0b00000000000000000000000000000000;                                            
@@ -1145,9 +1667,30 @@ int main(int argc, char **argv){
 
             }
             
-            if (scene==2){
+            if (scene==3){
                 ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
                 GuiTextInputBox((Rectangle){24, 24, 750, 125}, "Level Path", "(windows OR linux, not relative, leave blank to use default)", "click this button for free rivulets or something idk (click the back one to save)", level_path, 256, false);
+                    if(new_button("Rectangle", 24, 440, 120, 30, "Back")){
+                        // printf("\n%s",level_path);
+                        // ExportImage(LoadImageFromTexture(geometry_texture.texture), "C:/users/manti/test.png");
+
+                        save_level(level_path_2, level);
+
+                        free(level.geometry);
+                        free(level.material);
+                        // level.geometry=malloc(8000);
+                        // level.material=malloc(8000);
+                        for(x=0;x<256;x++)level_path[x]=level_path_2[x];
+                    level=create_array(level_path);
+                    render_editor_geometry(level, config, geometry_texture);
+                    
+                    scene=0;
+                
+                }
+            }
+            if(scene==2){
+                ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
+                GuiTextInputBox((Rectangle){24, 24, 750, 125}, "Level Path", "(windows OR linux, not relative, leave blank to use default)", "click this button for free rivulets or something idk (click the back one to save)", level_path_2, 256, false);
                     if(new_button("Rectangle", 24, 440, 120, 30, "Back")){
                         // printf("\n%s",level_path);
                         ExportImage(LoadImageFromTexture(geometry_texture.texture), "C:/users/manti/test.png");
@@ -1162,6 +1705,11 @@ int main(int argc, char **argv){
                 
                 }
             }
+            if (scene==10){
+
+if(temp==0){RenderTexture2D rendered = render_level(level, tiles, config);}
+temp=1;
+}
 
         }
         else if(theme==1){
