@@ -1290,16 +1290,16 @@ for(x=0;x<level.level_size[1];x++){
             if((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000000000000000000000100000000)){xx++;if(xx<1)printf(", ");printf("20");}
             if((level.geometry[(x*(level.level_size[1]*level.level_size[2]))+(y*level.level_size[2])+z]&0b00000000000000000000000010000000)){xx++;if(xx<1)printf(", ");printf("21");}
             printf("]");
-            printf("]zzz");
+            printf("]");
             if(!(z+1==level.level_size[2]))printf(", "); 
         }
-        printf("]y");
+        printf("]");
         if(!(y+1==level.level_size[0]))printf(", ");
 }
-printf("]x");
+printf("]");
 if(!(x+1==level.level_size[1]))printf(", ");
 }
-printf("]e");
+printf("]");
 printf("\t");
 }
 int main(int argc, char **argv){
